@@ -11,3 +11,10 @@ Then move the file to /usr/bin/:
 
 And lastly, go back to root of this repo and run the api:
 >go run test-api.go
+
+Examples
+Without custom resolution:
+>curl -X POST localhost:1337/download -d "name=sword art online 0&ep=1"
+
+With custom resolution (1080p):
+>curl -X POST localhost:1337/download -d "name=sword art online 0&ep=1&reso=1080"
