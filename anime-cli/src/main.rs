@@ -174,8 +174,9 @@ fn main() {
     }
 
     if num_episodes == 0 { exit(1); }
-
-    let dir_path= Path::new("/home/shelltear/AnimeDownloads").to_owned();
+    
+    // unless your username is shelltear, change it to correct one before compiling. otherwise this wont work
+    let dir_path = Path::new("/home/shelltear/AnimeDownloads").to_owned();
 
     let terminal_dimensions  = term_size::dimensions();
 
@@ -299,11 +300,8 @@ fn update_status_bar(progress_bar: Option<ProgressBar<Pipe>>, receiver: Receiver
         let mut progress = reader(receiver.recv(), "Error updating status");
 
         while !progress.eq("Success") {
-           // println!("{} ", progress);
             progress = reader(receiver.recv(), "Error updating status");
         }
-
-        // println!("{} ", progress);
     }
 }
 
@@ -335,8 +333,6 @@ fn update_bar(progress_bar: Option<ProgressBar<Pipe>>, receiver: Receiver<i64>, 
             progress = reader(receiver.recv(), "Error updating progress");
         }
     }
-
-    // status_bar_sender.send("Episode Finished Downloading".to_string()).unwrap();
 }
 
 fn parse_number(str_num: String) -> u16 {
