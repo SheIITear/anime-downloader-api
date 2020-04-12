@@ -6,8 +6,10 @@ Needed parameters are name and ep. Additionally, you can specify a custom resolu
 To run this, first build the downloader:
 >cd anime-cli && cargo build --release --no-default-features
 
-Then move the file to /usr/bin/:
+Then move the file to /usr/bin/ and create the dir to download anime to:
 >sudo cp target/release/anime-cli /usr/bin
+
+>mkdir ~/AnimeDownload
 
 And lastly, go back to root of this repo and run the api:
 >go run test-api.go
