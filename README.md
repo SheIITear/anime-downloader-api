@@ -9,7 +9,7 @@ To run this, first build the downloader:
 Then move the file to /usr/bin/ and create the dir to download anime to:
 >sudo cp target/release/anime-cli /usr/bin
 
->mkdir ~/AnimeDownload
+>mkdir ~/AnimeDownloads
 
 And lastly, go back to root of this repo and run the api:
 >go run test-api.go
