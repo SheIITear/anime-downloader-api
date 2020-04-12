@@ -7,6 +7,7 @@ Also, unless your username is shelltear, change it to yours in anime-cli/src/mai
 
 To run this, first build the downloader:
 ```
+# sudo apt install openssl pkg-config
 # cd anime-cli && cargo build --release --no-default-features
 ```
 
