@@ -2,6 +2,7 @@
 
 This is an api that downloads anime you send to it as post request to localhost:1337/download.
 Needed parameters are name and ep. Additionally, you can specify a custom resolution if you dont want it to default to 480p.
+
 Also, unless your username is shelltear, change it to yours in anime-cli/src/main.rs:179 before compiling.
 
 
