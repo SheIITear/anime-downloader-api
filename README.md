@@ -1,26 +1,11 @@
-# waifu2x-api-golang
-This is a bit edited version from https://github.com/nothink/docker-waifu2x-converter-cpp and https://github.com/gladkikhartem/waifurun that runs on ubuntu and doesn't require gpu.
+# anime-downloader-api
 
-It can be tested on: https://upgradewaifu.gq
+This is an api that downloads anime you send to it as post request to localhost:1337/download.
+Needed parameters are name and ep. Additionally, you can specify a custom resolution if you dont want it to default to 480p.
 
-Requirements:
-
-> cmake +3.8 and 
-> golang 1.14.1
-
-Before you can run the .sh files, you need to make them runable by running:
-
-> chmod +x script.sh
-
-To run this, first build the driver:
-
-> sudo apt install ocl-icd-opencl-dev
-
-> cd waifu2x && sudo ./build-opencv.sh && sudo ./build.sh
-
-Then run RUNME.sh to create needed directories and move files:
-> sudo RUNME.sh
-
-Lastly to run the api itself:
-
-> sudo go run main.go
+To run this, first build the downloader:
+>cd anime-cli && cargo build --release --no-default-features
+Then move the file to /usr/bin/:
+>sudo cp target/release/anime-cli /usr/bin
+And lastly, go back to root of this repo and run the api:
+>go run test-api.go
