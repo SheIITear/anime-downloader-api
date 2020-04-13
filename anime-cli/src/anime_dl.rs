@@ -153,7 +153,6 @@ pub fn connect_and_download(request: IRCRequest, channel_senders: Vec<Sender<i64
             let now = time::Instant::now();
             if message.is_some() {
                 let msg = &message.unwrap();
-                //println!("{}",msg);
                 if "Error".eq(msg) {
                     return Err(Error::new(ErrorKind::Other, String::from(format!("Error reading TcpStream on pack {}", package_number))))
                 }

@@ -11,7 +11,6 @@ use std::ffi::OsStr;
 use std::process::exit;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::thread;
-use std::io;
 
 use pbr::{MultiBar, Pipe, ProgressBar, Units};
 use std::error::Error;
@@ -28,42 +27,6 @@ const VIDEO_EXTENSIONS: &'static [&'static str] = &["3g2", "3gp", "avi", "flv", 
                                                     "m4v", "mkv", "mov", "mp4", "mpg",
                                                     "mpeg", "rm", "swf", "vob", "wmv"];
 
-fn print_usage(program: &str, opts: Options) {
-    let msg = opts.short_usage(&program);
-    print!("{}", opts.usage(&msg));
-    println!("\n\
-    ===================================\n\
-    Helpful Tips:                      \n\
-    Try to keep your anime name simple \n\
-    and use quotes when you use -q     \n\
-    e.g. \"sakamoto\"                  \n\
-                                       \n\
-    Common resolutions 480/720/1080    \n\
-                                       \n\
-    Batch end number means last episode\n\
-    in a range of episodes             \n\
-      e.g. episode ------------> batch \n\
-      everything from 1 -------> 10    \n\
-                                       \n\
-    You can apply default resolution   \n\
-    and default batch # with a blank   \n\
-    ===================================\n
-    ");
-}
-
-fn get_cli_input(prompt: &str) -> String {
-    println!("{}", prompt);
-    let mut input = String::new();
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => {},
-        Err(e) => {
-            eprintln!("{}", e);
-            eprintln!("Please enter a normal query");
-            exit(1);
-        }
-    }
-    input.to_string().replace(|c: char| c == '\n' || c == '\r', "")
-}
 
 fn main() {
     let args: Vec<String> = std::env::args().collect(); // We collect args here
@@ -74,13 +37,6 @@ fn main() {
         .optopt("b", "batch", "Batch end number", "NUMBER")
         .optopt("r", "resolution", "Resolution", "NUMBER")
         .optflag("h", "help", "print this help menu");
-
-    // Unfortunately, cannot use getopts to check for a single optional flag
-    // https://github.com/rust-lang-nursery/getopts/issues/46
-    if args.contains(&"-h".to_string()) || args.contains(&"--help".to_string()) {
-        print_usage(&program, opts);
-        exit(0);
-    }
    
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -91,14 +47,13 @@ fn main() {
         }
     };
 
-    let cli = if args.len() > 1 { true } else { false }; // Are we in cli mode or prompt mode?
+   // let cli = true  // Are we in cli mode or prompt mode?
 
     let mut query: String;
     let resolution: Option<u16>;
     let episode: Option<u16>;
     let mut batch: Option<u16>;
 
-    if cli { // Get user input
         resolution = match matches.opt_str("r").as_ref().map(String::as_str) {
             Some("0") => None,
             Some(r) => Some(parse_number(String::from(r))),
@@ -115,29 +70,7 @@ fn main() {
         batch = match matches.opt_str("b") {
             Some(b) => Some(parse_number(b)),
             None => None
-        }
-
-    } else {
-        println!("Welcome to anime-cli");
-        println!("Default resolution: None | episode: None | batch = episode");
-        println!("Resolution shortcut: 1 => 480p | 2 => 720p | 3 => 1080p");
-        query = get_cli_input("Anime/Movie name: ");
-        resolution =  match parse_number(get_cli_input("Resolution: ")) {
-            0 => None,
-            1 => Some(480),
-            2 => Some(720),
-            3 => Some(1080),
-            r => Some(r),
         };
-        episode = match parse_number(get_cli_input("Episode number: ")) {
-            0 => None,
-            e => Some(e),
-        };
-        batch = match parse_number(get_cli_input("Batch Ep End Number: ")) {
-            0 => { if episode.is_some() { episode } else { None } },
-            b => Some(b),
-        };
-    }
 
     query = query + match resolution { // If resolution entered, add a resolution to the query
         Some(x) => format!(" {}", x),
@@ -345,77 +278,4 @@ fn parse_number(str_num: String) -> u16 {
             exit(1);
         }
     }
-}
-
-#[cfg(feature = "mpv")]
-fn play_video(filenames: Vec<String>, dir_path: PathBuf) -> thread::JoinHandle<()> {
-    thread::spawn(move || {
-        thread::sleep(std::time::Duration::from_secs(5));
-        let mut i = 0;
-        let mut timeout = 0;
-        let mut filename = &filenames[i];
-        let video_path = dir_path.join(filename);
-        while timeout < 5 { //Initial connection waiting
-            if !video_path.is_file() {
-                timeout += 1;
-                thread::sleep(std::time::Duration::from_secs(5));
-            } else {
-                break;
-            }
-        }
-        let mut mpv_builder = mpv::MpvHandlerBuilder::new().expect("Failed to init MPV builder");
-        if video_path.is_file() {
-            let video_path = video_path
-                .to_str()
-                .expect("Expected a string for Path, got None");
-            mpv_builder.set_option("osc", true).unwrap();
-            mpv_builder
-                .set_option("input-default-bindings", true)
-                .unwrap();
-            mpv_builder.set_option("input-vo-keyboard", true).unwrap();
-            let mut mpv = mpv_builder.build().expect("Failed to build MPV handler");
-            mpv.command(&["loadfile", video_path as &str])
-                .expect("Error loading file");
-            'main: loop {
-                while let Some(event) = mpv.wait_event(0.0) {
-                    match event {
-                        mpv::Event::Shutdown => {
-                            break 'main;
-                        }
-                        mpv::Event::Idle => {
-                            if i >= filenames.len() {
-                                break 'main;
-                            }
-                        }
-                        mpv::Event::EndFile(Ok(mpv::EndFileReason::MPV_END_FILE_REASON_EOF)) => {
-                            i += 1;
-                            if i >= filenames.len() {
-                                break 'main;
-                            }
-                            filename = &filenames[i];
-                            let next_video_path = dir_path.join(filename);
-                            if next_video_path.is_file() {
-                                let next_video_path = next_video_path
-                                    .to_str()
-                                    .expect("Expected a string for Path, got None");
-                                mpv.command(&["loadfile", next_video_path as &str])
-                                    .expect("Error loading file");
-                            } else {
-                                eprintln!(
-                                    "A file is required; {} is not a valid file",
-                                    next_video_path.to_str().unwrap()
-                                );
-                            }
-                        }
-                        _ => {}
-                    };
-                }
-            }
-        } else {
-            eprintln!(
-                "A file is required; {} is not a valid file",
-                video_path.to_str().unwrap()
-            );
-        }
-    })
 }
