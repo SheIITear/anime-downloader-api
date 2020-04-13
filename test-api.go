@@ -15,6 +15,7 @@ import (
 // model
 type Name2 struct {
 	Filename string
+	Reso     string
 	Took     string
 }
 
@@ -32,11 +33,11 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	ep := r.Form.Get("ep")
 	name := r.Form.Get("name")
-	reso := r.Form.Get("reso")
+	reso1 := r.Form.Get("reso")
 
 	// check if custom resolution is given, otherwise default to 480p
-	if reso == "" {
-		reso = "480"
+	if reso1 == "" {
+		reso1 = "480"
 		gg.Blue.Println("No resolution given, defaulting to 480p")
 	}
 
@@ -44,7 +45,7 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 
 	// download and time it
 	time1 := time.Now()
-	cmdOutput, err := exec.Command("anime-cli", "-q "+name, "-e "+ep, "-r "+reso).Output()
+	cmdOutput, err := exec.Command("anime-cli", "-q "+name, "-e "+ep, "-r "+reso1).Output()
 	realout := string(cmdOutput[:])
 	realout = strings.TrimSuffix(realout, "\n")
 	took1 := time.Since(time1)
@@ -62,7 +63,7 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 	name2 := Name2{}
 	name2.Filename = realout
 	name2.Took = took1.String()
-
+	name2.Reso = reso1
 	realoutJSON, err := json.Marshal(name2)
 
 	if err != nil {
