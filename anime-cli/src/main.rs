@@ -1,5 +1,3 @@
-#[cfg(feature = "mpv")]
-extern crate mpv;
 extern crate term_size;
 
 mod anime_dl;
