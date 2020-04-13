@@ -80,15 +80,15 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	port := "1337"
 
 	// this makes me look cool
+	port := "1337"
 	print("\033[H\033[2J")
 	gg.Blue.Println("listening on port:", port)
 
 	// start listening
-	r := mux.NewRouter()
-	r.HandleFunc("/download", downloadAnimu)
+	r := mux.NewRouter().StrictSlash(true)
+	r.HandleFunc("/download", downloadAnimu).Methods("POST")
 	err := http.ListenAndServe(":"+port, r)
 
 	if err != nil {
