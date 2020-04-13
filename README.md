@@ -18,7 +18,7 @@ Then move the file to /usr/bin/ and create the dir to download anime to:
 ```
 And lastly, go back to root of this repo and run the api:
 ```
-# go run test-api.go
+# go run api.go
 ```
 Examples
 ```
