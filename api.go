@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	gg "github.com/gookit/color"
@@ -79,12 +82,51 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 	gg.Blue.Println("Waiting for new request...")
 }
 
+// cleaning function
+func cleaning() {
+
+	// path and other vars
+	home, err := os.UserHomeDir()
+	dir := home + "/AnimeDownloads/"
+	dirRead, _ := os.Open(dir)
+	dirFiles, _ := dirRead.Readdir(0)
+
+	// error handling
+	if err != nil {
+		gg.Red.Println("deleting downloaded files failed, error: ", err)
+	}
+
+	// loop it
+	gg.Blue.Println("\ndeleting downloaded files...")
+	for index := range dirFiles {
+		fileHere := dirFiles[index]
+
+		// get names of files the path.
+		nameHere := fileHere.Name()
+		fullPath := dir + nameHere
+
+		// delete files
+		os.Remove(fullPath)
+	}
+
+	gg.Green.Println("files deleted, shutting down...")
+}
+
 func main() {
 
 	// this makes me look cool
 	port := "1337"
 	print("\033[H\033[2J")
 	gg.Blue.Println("listening on port:", port)
+
+	// clean files after ctrl + c
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		cleaning()
+		os.Exit(1)
+	}()
 
 	// start listening
 	r := mux.NewRouter().StrictSlash(true)
