@@ -40,7 +40,6 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 	reso1 := r.Form.Get("reso")
 	// searchForm := r.Form.Get("type")
 
-
 	// check if custom resolution is given, otherwise default to 480p
 	if reso1 == "" {
 		reso1 = "480"
@@ -108,7 +107,6 @@ func searchAnimu(w http.ResponseWriter, r *http.Request){
 		gg.Blue.Println("No resolution given, defaulting to 480p")
 	}
 
-
 		// vars for request
 		api := "https://api.nibl.co.uk/nibl/"
 		gg.Blue.Println("Encoding url...")
@@ -157,8 +155,6 @@ func searchAnimu(w http.ResponseWriter, r *http.Request){
 		fmt.Fprintf(w, "Found: " + content + "\n")
 		return
 }
-
-
 
 // cleaning function
 func cleaning() {
