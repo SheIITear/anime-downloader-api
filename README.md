@@ -30,6 +30,7 @@ With custom resolution (1080p):
 
 Search:
 # curl -X POST localhost:1337/search -d "name=charlotte&ep=1&reso=720p"
+Note: on search if you want custom resolution, you need to add "p" to the resolution. 720 -> 720p.
 ```
 ## Disclaimer
 When downloading anime, users are subject to country-specific software distribution laws. This is not designed to enable illegal activity. We do not promote piracy nor do we allow it under any circumstances. You should own an original copy of every content downloaded through this tool. Please take the time to review copyright and video distribution laws and/or policies for your country before proceeding.
