@@ -114,7 +114,7 @@ func searchAnimu(w http.ResponseWriter, r *http.Request) {
 	anime := "/search?query=" + url.QueryEscape(name) + "%20" + reso1 + "&episodeNumber=" + ep
 
 	// print and send request
-	gg.Blue.Println("Search request received. Searching for: ", name, ep, reso1)
+	gg.Blue.Println("Search request received. Searching for:", name, ep, reso1)
 	gg.Blue.Println("Sending request...")
 	rep, e := http.Get(api + anime)
 
