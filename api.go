@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -85,7 +86,7 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 }
 
 // search anime
-func searchAnimu(w http.ResponseWriter, r *http.Request){
+func searchAnimu(w http.ResponseWriter, r *http.Request) {
 
 	// check that it is a post request
 	if r.Method != http.MethodPost {
@@ -107,53 +108,41 @@ func searchAnimu(w http.ResponseWriter, r *http.Request){
 		gg.Blue.Println("No resolution given, defaulting to 480p")
 	}
 
-		// vars for request
-		api := "https://api.nibl.co.uk/nibl/"
-		gg.Blue.Println("Encoding url...")
-		anime := "/search?query=" + url.QueryEscape(name) + "%20" + reso1 + "&episodeNumber=" + ep
+	// vars for request
+	api := "https://api.nibl.co.uk/nibl/"
+	gg.Blue.Println("Encoding url...")
+	anime := "/search?query=" + url.QueryEscape(name) + "%20" + reso1 + "&episodeNumber=" + ep
 
-		// print and send request
-		gg.Blue.Println("Search request received. Searching for: ", name, ep, reso1)
-		gg.Blue.Println("Sending request...")
-		rep, e := http.Get(api + anime)
-	
-		if e != nil {
-			gg.Red.Println("Error:", e.Error())
-			fmt.Fprintf(w, "Error:", e.Error())
-			return
-		}
-	
-		defer rep.Body.Close()
-	
-		// unmarshal
-		gg.Blue.Println("Unmarshalling response...")
-		var result map[string]interface{}
-		json.NewDecoder(rep.Body).Decode(&result)
-	
-		// converting lmao
-		var cont2 interface{} = result["content"]
-		cont := fmt.Sprintf("%v", cont2)
-	
-		// print output and beatify it. ikr its terrible to read
-		gg.Blue.Println("Beatifying output..")
+	// print and send request
+	gg.Blue.Println("Search request received. Searching for: ", name, ep, reso1)
+	gg.Blue.Println("Sending request...")
+	rep, e := http.Get(api + anime)
 
-		// remove brackets
-		cont = strings.TrimPrefix(cont, "[")
-		cont = strings.TrimSuffix(cont, "]")
-
-		// replace useless map with newline
-		content := strings.ReplaceAll(cont, "map", "\n\n")
-
-		// just more beatifying
-		content = strings.ReplaceAll(content, "episodeNumber", "Episode")
-		content = strings.ReplaceAll(content, "name", "Name")
-		content = strings.ReplaceAll(content, "last", "")
-		content = strings.ReplaceAll(content, "size", "Size")
-
-		// print and send response
-		gg.Green.Println("Status:", result["status"],"\nSearch result sent.")
-		fmt.Fprintf(w, "Found: " + content + "\n")
+	if e != nil {
+		gg.Red.Println("Error:", e.Error())
+		fmt.Fprintf(w, "Error:", e.Error())
 		return
+	}
+
+	defer rep.Body.Close()
+
+	// unmarshal status & convert rep.Body
+	gg.Blue.Println("Unmarshalling...")
+	resp, e := ioutil.ReadAll(rep.Body)
+
+	if e != nil {
+		gg.Red.Println("Error:", e.Error())
+		fmt.Fprintf(w, "Error:", e.Error())
+		return
+	}
+
+	var status map[string]interface{}
+	json.NewDecoder(rep.Body).Decode(&status)
+
+	// print and send response
+	gg.Green.Println("Status:", status["status"], "\nSearch result sent.")
+	fmt.Fprintf(w, string(resp))
+	return
 }
 
 // cleaning function
@@ -215,5 +204,5 @@ func main() {
 	if err != nil {
 		gg.Red.Println(err)
 		return
-		}
 	}
+}
