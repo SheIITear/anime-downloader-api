@@ -127,6 +127,8 @@ func searchAnimu(w http.ResponseWriter, r *http.Request) {
 	defer rep.Body.Close()
 
 	// unmarshal status & convert rep.Body
+	var result map[string]interface{}
+	json.NewDecoder(rep.Body).Decode(&result)
 	gg.Blue.Println("Unmarshalling...")
 	resp, e := ioutil.ReadAll(rep.Body)
 
@@ -136,11 +138,8 @@ func searchAnimu(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var status map[string]interface{}
-	json.NewDecoder(rep.Body).Decode(&status)
-
 	// print and send response
-	gg.Green.Println("Status:", status["status"], "\nSearch result sent.")
+	gg.Green.Println("Status:", result["status"], "\nSearch result sent.")
 	fmt.Fprintf(w, string(resp))
 	return
 }
