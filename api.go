@@ -114,7 +114,7 @@ func searchAnimu(w http.ResponseWriter, r *http.Request) {
 	anime := "/search?query=" + url.QueryEscape(name) + "%20" + reso1 + "&episodeNumber=" + ep
 
 	// print and send request
-	gg.Blue.Println("Search request received. Searching for:", name, ep, reso1)
+	gg.Blue.Println("Search request received. Searching for: ", name, ep, reso1)
 	gg.Blue.Println("Sending request...")
 	rep, e := http.Get(api + anime)
 
@@ -126,10 +126,7 @@ func searchAnimu(w http.ResponseWriter, r *http.Request) {
 
 	defer rep.Body.Close()
 
-	// unmarshal status & convert rep.Body
-	var result map[string]interface{}
-	json.NewDecoder(rep.Body).Decode(&result)
-	gg.Blue.Println("Unmarshalling...")
+	// response
 	resp, e := ioutil.ReadAll(rep.Body)
 
 	if e != nil {
@@ -138,9 +135,9 @@ func searchAnimu(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// print and send response
-	gg.Green.Println("Status:", result["status"], "\nSearch result sent.")
+	// send response
 	fmt.Fprintf(w, string(resp))
+	gg.Green.Println("Search result sent.")
 	return
 }
 
