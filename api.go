@@ -12,6 +12,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"math/rand"
+	"path/filepath"
 
 	gg "github.com/gookit/color"
 	"github.com/gorilla/mux"
@@ -19,9 +21,12 @@ import (
 
 // model
 type Name2 struct {
-	Filename   string
-	Resolution string
-	Took       string
+	Filename   		string
+	Resolution 		string
+	TookDownload    string
+	TookCompress	string
+	CompressError 	bool
+	Compressed		bool
 }
 
 func downloadAnimu(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +44,7 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 	ep := r.Form.Get("ep")
 	name := r.Form.Get("name")
 	reso1 := r.Form.Get("reso")
+	compress := r.Form.Get("compress")
 	// searchForm := r.Form.Get("type")
 
 	// check if custom resolution is given, otherwise default to 480p
@@ -55,6 +61,7 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 	realout := string(cmdOutput[:])
 	realout = strings.TrimSuffix(realout, "\n")
 	took1 := time.Since(time1)
+	took2 := took1.String()
 
 	if err != nil {
 		gg.Red.Println("No anime found")
@@ -65,11 +72,18 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 	// print and send result
 	gg.Green.Println("Downloading: " + name + " episode: " + ep + " finished. Took: " + took1.String())
 
+	if compress == "true" {
+		var extension = filepath.Ext(realout)
+		var name = realout[0:len(realout)-len(extension)]
+		compressAnime(name, extension, took2, w, r)
+	} else {
+
 	// convert to json
 	name2 := Name2{}
 	name2.Filename = realout
-	name2.Took = took1.String()
+	name2.TookDownload = took2
 	name2.Resolution = reso1
+	name2.Compressed = false
 	realoutJSON, err := json.Marshal(name2)
 
 	if err != nil {
@@ -83,6 +97,75 @@ func downloadAnimu(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(realoutJSON)
 	gg.Blue.Println("Waiting for new request...")
+	}
+}
+
+// compress
+func compressAnime(name string, extension string, took2 string, w http.ResponseWriter, r *http.Request) {
+
+	home, err := os.UserHomeDir()
+
+	if err != nil{
+		fmt.Println("Getting dir failed")
+	}
+
+	dir := home + "/AnimeDownloads/"
+
+	rand.Seed(time.Now().UnixNano())
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "abcdefghijklmnopqrstuvwxyz" + "0123456789")
+	length := 8
+	var a strings.Builder
+	var b strings.Builder
+
+
+	for i := 0; i < length; i++ {
+		b.WriteRune(chars[rand.Intn(len(chars))])
+		a.WriteRune(chars[rand.Intn(len(chars))])
+	}
+
+	newname := b.String() + extension
+	name3 := a.String() + extension
+
+	name = strings.Replace(name, " ", "_", -1)
+	err = os.Rename(dir + name + extension, dir + name3)
+
+	if err != nil {
+		gg.Red.Println("Filename error:", err)
+	}
+
+	name2 := Name2{}
+
+	command := "ffmpeg -i " + dir + name3 + " -vcodec libx265 -crf 28 -preset fast -c:a copy " + dir + newname
+	cmdString := strings.TrimSuffix(command, "\n")
+	cmdString2 := strings.Fields(cmdString)
+	gg.Blue.Println("Received file: " + name3 + "\nStarting compression, please stand by...")
+
+	// compress and time it
+	time1 := time.Now()
+	cmdOutput, err := exec.Command(cmdString2[0], cmdString2[1:]...).Output()
+	realout := string(cmdOutput[:])
+	realout = strings.TrimSuffix(realout, "\n")
+	took1 := time.Since(time1)
+
+	if err != nil {
+		name2.CompressError = true
+		gg.Red.Println("Compress failed:", err)
+	} else {
+		name2.CompressError = false
+	}
+
+	name2.Filename = newname + extension
+	name2.TookDownload = took2
+	name2.TookCompress = took1.String()
+	name2.Compressed = true
+	realoutJSON, err := json.Marshal(name2)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(realoutJSON)
+
+	gg.Green.Println("Anime compressed and response sent.\nWaiting for new request...")
+	return
 }
 
 // search anime
@@ -157,6 +240,7 @@ func cleaning() {
 
 	// loop it
 	gg.Blue.Println("\ndeleting downloaded files...")
+	
 	for index := range dirFiles {
 		fileHere := dirFiles[index]
 
@@ -178,9 +262,10 @@ func main() {
 	print("\033[H\033[2J")
 	gg.Blue.Println("listening on port:", port)
 
-	// clean files after ctrl + c
+	// delete files after ctrl + c
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
 		<-c
 		cleaning()
